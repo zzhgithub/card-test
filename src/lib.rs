@@ -3,6 +3,7 @@ use bevy::app::App;
 use bevy::color::palettes::css::{WHITE, YELLOW};
 use bevy::picking::focus::update_interactions;
 use bevy::prelude::*;
+use bevy_tween::bevy_time_runner::TimeRunnerEnded;
 use bevy_tween::combinator::{backward, forward, sequence, tween};
 use bevy_tween::interpolate::{scale, sprite_color, translation_to};
 use bevy_tween::prelude::*;
@@ -18,7 +19,7 @@ pub struct CommonPlugin;
 
 impl Plugin for CommonPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, effect_system);
+        app.add_systems(Update, (effect_system, despawn_effect_system));
     }
 }
 
@@ -57,7 +58,7 @@ fn spawn_ui_popup(
                     justify_content: JustifyContent::Center,
                     ..Default::default()
                 },
-                BackgroundColor(Color::srgba(1.0, 1.0, 1.0, 0.6)),
+                BackgroundColor(Color::rgba(1.0, 1.0, 1.0, 0.6)),
                 BorderColor(Color::BLACK),
                 BorderRadius::all(Val::Px(10.0)),
             ))
@@ -163,9 +164,14 @@ fn spawn_ui_popup(
 #[derive(Component)]
 pub struct MainCamera;
 
+#[derive(Component)]
+struct Effect;
+
 fn effect_system(
     mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
     asset_server: Res<AssetServer>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
     mut event: EventReader<TweenEvent<&'static str>>,
     query: Query<(Entity, &Transform), With<MainCamera>>,
 ) {
@@ -175,18 +181,21 @@ fn effect_system(
             let entity = AnimationTarget.into_target();
             commands
                 .spawn((
-                    Sprite {
-                        image: asset_server.load("circle.png"),
-                        ..default()
-                    },
-                    // todo 这里的值要变
+                    // Effect,
+                    Mesh3d(meshes.add(Annulus::default())),
+                    MeshMaterial3d(materials.add(StandardMaterial {
+                        base_color: YELLOW.into(),
+                        alpha_mode: AlphaMode::Blend,
+                        unlit: true,
+                        ..Default::default()
+                    })),
                     Transform::from_translation(Vec3::new(0.0, 0.0, 1.0)),
                     // .with_rotation(Quat::from_axis_angle(Vec3::Y, -PI / 2.0)),
                     AnimationTarget,
                 ))
                 .animation()
                 .insert_tween_here(
-                    Duration::from_secs_f32(10.0),
+                    Duration::from_secs_f32(0.2),
                     EaseKind::QuadraticOut,
                     (
                         entity.with(scale(Vec3::new(1., 1., 0.), Vec3::new(15., 15., 0.))),
@@ -222,6 +231,18 @@ fn effect_system(
             }
         }
         _ => {}
+    });
+}
+
+fn despawn_effect_system(
+    mut commands: Commands,
+    q_effect: Query<(), With<Effect>>,
+    mut ended: EventReader<TimeRunnerEnded>,
+) {
+    ended.read().for_each(|ended| {
+        if ended.is_completed() && q_effect.contains(ended.time_runner) {
+            commands.entity(ended.time_runner).despawn_recursive();
+        }
     });
 }
 
