@@ -169,13 +169,6 @@ pub fn deal_on_drop(
                         )))
                         .insert(card_end.clone())
                         .insert(Setted);
-
-                    // 恢复自由身体
-                    if let Ok(children) = ch_q.get(p_clone) {
-                        for child in children.iter() {
-                            cmd.entity(child.clone()).remove::<PickingBehavior>();
-                        }
-                    }
                     info!("确认");
                 },
                 move |cmd| {
