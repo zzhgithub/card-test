@@ -1,16 +1,16 @@
-use bevy::DefaultPlugins;
 use bevy::app::App;
 use bevy::asset::{Assets, Handle};
+use bevy::DefaultPlugins;
 
 use bevy::math::{Quat, Vec2};
 use bevy::pbr::StandardMaterial;
 use bevy::prelude::*;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
-use bevy_tween::DefaultTweenPlugins;
 use bevy_tween::prelude::*;
+use bevy_tween::DefaultTweenPlugins;
 use card_test::camera_controller::{CameraController, CameraControllerPlugin};
-use card_test::cards::{Card, Dragging, Setted, gen_put_card};
-use card_test::cases::{CaseImages, CasePlane, render_case};
+use card_test::cards::{gen_put_card, Card, Dragging, Setted};
+use card_test::cases::{render_case, CaseImages, CasePlane};
 use card_test::{CommonPlugin, MainCamera};
 use std::f32::consts::PI;
 
@@ -27,6 +27,7 @@ fn main() {
         .add_plugins(WorldInspectorPlugin::new())
         .add_systems(Startup, setup)
         .add_systems(Update, change_trans)
+        .add_systems(Update, card_test::cards::clear_on_finish_system)
         .run();
 }
 
