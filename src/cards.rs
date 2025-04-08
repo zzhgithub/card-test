@@ -166,12 +166,14 @@ pub fn deal_on_drop(
                                     event("boom"),
                                 )),
                             )),
-                            tween(
-                                Duration::from_secs_f32(0.6),
-                                EaseKind::ExponentialOut,
-                                mid_state2.translation_to(end),
-                            ),
-                            event("shark"),
+                            parallel((
+                                tween(
+                                    Duration::from_secs_f32(0.6),
+                                    EaseKind::ExponentialOut,
+                                    mid_state2.translation_to(end),
+                                ),
+                                event("shark"),
+                            )),
                         )))
                         .insert(card_end.clone())
                         .insert(Setted);

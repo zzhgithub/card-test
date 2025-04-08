@@ -1,5 +1,6 @@
 use crate::cards::Card;
-use crate::color::{basic_color, BaseColor};
+use crate::color::{BaseColor, basic_color};
+use crate::shark::{custom_interpolators_plugin, effect_intensity};
 use bevy::app::App;
 use bevy::color::palettes::css::{WHITE, YELLOW};
 use bevy::picking::focus::update_interactions;
@@ -17,6 +18,7 @@ pub mod camera_controller;
 pub mod cards;
 pub mod cases;
 pub mod color;
+mod shark;
 
 pub struct CommonPlugin;
 
@@ -25,6 +27,7 @@ impl Plugin for CommonPlugin {
         app.add_systems(Update, (effect_system, despawn_effect_system));
         app.add_tween_systems(asset_tween_system::<BaseColor>())
             .register_type::<AssetTween<BaseColor>>();
+        custom_interpolators_plugin::<MainCamera>(app);
     }
 }
 
@@ -204,17 +207,14 @@ fn effect_system(
                     Duration::from_secs_f32(0.2),
                     EaseKind::Linear,
                     (
-                        entity.with(scale(
-                            Vec3::new(0.6, 0.6, 0.),
-                            Vec3::new(3., 3., 0.),
-                        )),
+                        entity.with(scale(Vec3::new(0.6, 0.6, 0.), Vec3::new(3., 3., 0.))),
                         target.with(basic_color(
                             into_color(WHITE.with_alpha(0.5)),
                             into_color(YELLOW.with_alpha(0.)),
                         )),
                     ),
                 );
-        },
+        }
         "boom" => {
             info!("Boom!");
             let handle = materials.add(StandardMaterial {
@@ -247,28 +247,24 @@ fn effect_system(
                     ),
                 );
         }
-        "shark2" => {
-            // todo 镜头动
-            let mut rng = rand::thread_rng();
-            let dx: f32 = rng.gen_range(-5.0..=5.0);
-            let dy: f32 = rng.gen_range(-5.0..=5.0);
-
+        "shark" => {
             if let Ok((entity, trans)) = query.get_single() {
-                let entity_a = AnimationTarget.into_target();
-                let mut target_state = entity_a.state(trans.translation.clone());
                 commands
                     .entity(entity)
                     .insert(AnimationTarget)
                     .animation()
-                    .repeat(Repeat::Times {
-                        times: 7,
-                        times_repeated: 1,
-                    })
-                    .insert(sequence((tween(
-                        Duration::from_secs_f32(0.1),
-                        EaseKind::ExponentialOut,
-                        target_state.with(translation_to(Vec3::new(dx, dy, trans.translation.z))),
-                    ),)));
+                    .insert(sequence((
+                        tween(
+                            Duration::from_secs_f32(0.2),
+                            EaseKind::QuarticIn,
+                            effect_intensity(0., 1.),
+                        ),
+                        tween(
+                            Duration::from_secs_f32(1.),
+                            EaseKind::QuarticIn,
+                            effect_intensity(1., 0.0),
+                        ),
+                    )));
             }
         }
         _ => {}
@@ -289,17 +285,4 @@ fn despawn_effect_system(
 
 fn into_color<T: Into<bevy::color::Srgba>>(color: T) -> Color {
     Color::Srgba(color.into())
-}
-
-fn big_x_do_effect(
-    mut q_big_x: Query<&mut Transform, With<MainCamera>>,
-    // mut q_rotation_animator: Query<&mut TimeRunner, With<RotatationAnimator>>,
-) {
-    let mut rng = rand::thread_rng();
-    let dx: f32 = rng.gen_range(-5.0..=5.0);
-    let dy: f32 = rng.gen_range(-5.0..=5.0);
-    let mut new_vec = q_big_x.single_mut().translation;
-    new_vec.x += dx;
-    new_vec.y += dy;
-    q_big_x.single_mut().translation = new_vec;
 }
