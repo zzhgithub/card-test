@@ -1,8 +1,10 @@
 use crate::cards::Card;
+use crate::color::{basic_color, BaseColor};
 use bevy::app::App;
 use bevy::color::palettes::css::{WHITE, YELLOW};
 use bevy::picking::focus::update_interactions;
 use bevy::prelude::*;
+use bevy_tween::asset_tween_system;
 use bevy_tween::bevy_time_runner::TimeRunnerEnded;
 use bevy_tween::combinator::{backward, forward, sequence, tween};
 use bevy_tween::interpolate::{scale, sprite_color, translation_to};
@@ -14,12 +16,15 @@ use std::f32::consts::PI;
 pub mod camera_controller;
 pub mod cards;
 pub mod cases;
+pub mod color;
 
 pub struct CommonPlugin;
 
 impl Plugin for CommonPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Update, (effect_system, despawn_effect_system));
+        app.add_tween_systems(asset_tween_system::<BaseColor>())
+            .register_type::<AssetTween<BaseColor>>();
     }
 }
 
@@ -176,19 +181,20 @@ fn effect_system(
     query: Query<(Entity, &Transform), With<MainCamera>>,
 ) {
     event.read().for_each(|event| match event.data {
-        "boom" => {
-            info!("Boom!");
+        "small_boom" => {
+            let handle = materials.add(StandardMaterial {
+                base_color: WHITE.into(),
+                unlit: true,
+                ..Default::default()
+            });
+            let mut target = handle.clone().into_target();
+
             let entity = AnimationTarget.into_target();
             commands
                 .spawn((
-                    // Effect,
-                    Mesh3d(meshes.add(Annulus::default())),
-                    MeshMaterial3d(materials.add(StandardMaterial {
-                        base_color: YELLOW.into(),
-                        alpha_mode: AlphaMode::Blend,
-                        unlit: true,
-                        ..Default::default()
-                    })),
+                    Effect,
+                    Mesh3d(meshes.add(Annulus::new(2.6, 3.0))),
+                    MeshMaterial3d(handle),
                     Transform::from_translation(Vec3::new(0.0, 0.0, 1.0)),
                     // .with_rotation(Quat::from_axis_angle(Vec3::Y, -PI / 2.0)),
                     AnimationTarget,
@@ -196,12 +202,47 @@ fn effect_system(
                 .animation()
                 .insert_tween_here(
                     Duration::from_secs_f32(0.2),
+                    EaseKind::Linear,
+                    (
+                        entity.with(scale(
+                            Vec3::new(0.6, 0.6, 0.),
+                            Vec3::new(3., 3., 0.),
+                        )),
+                        target.with(basic_color(
+                            into_color(WHITE.with_alpha(0.5)),
+                            into_color(YELLOW.with_alpha(0.)),
+                        )),
+                    ),
+                );
+        },
+        "boom" => {
+            info!("Boom!");
+            let handle = materials.add(StandardMaterial {
+                base_color: WHITE.into(),
+                unlit: true,
+                ..Default::default()
+            });
+            let mut target = handle.clone().into_target();
+
+            let entity = AnimationTarget.into_target();
+            commands
+                .spawn((
+                    Effect,
+                    Mesh3d(meshes.add(Annulus::new(2.6, 3.0))),
+                    MeshMaterial3d(handle),
+                    Transform::from_translation(Vec3::new(0.0, 0.0, 1.0)),
+                    // .with_rotation(Quat::from_axis_angle(Vec3::Y, -PI / 2.0)),
+                    AnimationTarget,
+                ))
+                .animation()
+                .insert_tween_here(
+                    Duration::from_secs_f32(1.0),
                     EaseKind::QuadraticOut,
                     (
-                        entity.with(scale(Vec3::new(1., 1., 0.), Vec3::new(15., 15., 0.))),
-                        entity.with(sprite_color(
+                        entity.with(scale(Vec3::new(1., 1., 0.), Vec3::new(10., 10., 0.))),
+                        target.with(basic_color(
                             into_color(WHITE.with_alpha(1.)),
-                            into_color(YELLOW.with_alpha(1.)),
+                            into_color(YELLOW.with_alpha(0.)),
                         )),
                     ),
                 );

@@ -4,7 +4,7 @@ use bevy::ecs::observer::TriggerTargets;
 use bevy::prelude::*;
 use bevy_inspector_egui::InspectorOptions;
 use bevy_tween::combinator::{
-    event, event_for, parallel, sequence, tween, TransformTargetStateExt,
+    TransformTargetStateExt, event, event_for, parallel, sequence, tween,
 };
 use bevy_tween::interpolation::EaseKind;
 use bevy_tween::prelude::{AnimationBuilderExt, IntoTarget};
@@ -155,17 +155,23 @@ pub fn deal_on_drop(
                                 EaseKind::ExponentialOut,
                                 start.translation_to(mid),
                             ),
-                            tween(
-                                Duration::from_secs_f32(1.0),
-                                EaseKind::ExponentialOut,
-                                mid_state.translation_to(mid2),
-                            ),
+                            parallel((
+                                tween(
+                                    Duration::from_secs_f32(1.0),
+                                    EaseKind::ExponentialOut,
+                                    mid_state.translation_to(mid2),
+                                ),
+                                sequence((
+                                    event_for(Duration::from_secs_f32(0.4), "small_boom"),
+                                    event("boom"),
+                                )),
+                            )),
                             tween(
                                 Duration::from_secs_f32(0.6),
                                 EaseKind::ExponentialOut,
                                 mid_state2.translation_to(end),
                             ),
-                            parallel((event("boom"), event("shark"))),
+                            event("shark"),
                         )))
                         .insert(card_end.clone())
                         .insert(Setted);
