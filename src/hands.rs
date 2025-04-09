@@ -1,10 +1,60 @@
+use crate::cards::Card;
+use bevy::app::App;
 use bevy::math::ops::{cos, sin};
 use bevy::math::{Quat, Vec3};
-use bevy::prelude::{Component, Transform};
+use bevy::prelude::*;
+use bevy_tween::prelude::*;
+use bevy_tween::tween::AnimationTarget;
+use std::f32::consts::PI;
 
-
-#[derive(Component,Debug,Default)]
+#[derive(Component, Debug, Default)]
 pub struct HandCard;
+
+#[derive(Component)]
+pub struct CardPlane;
+
+#[derive(Event, Debug)]
+pub struct HandCardChanged;
+
+pub struct HandCardPlugin;
+
+impl Plugin for HandCardPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_event::<HandCardChanged>();
+        app.add_systems(Update, change_hand_cards);
+    }
+}
+
+pub fn change_hand_cards(
+    mut commands: Commands,
+    mut hand_card_changed: EventReader<HandCardChanged>,
+    mut cards: Query<(Entity, &mut Transform, &mut Card), With<HandCard>>,
+    mut card_plane: Query<&Transform, (With<CardPlane>, Without<Card>)>,
+) {
+    for _ in hand_card_changed.read() {
+        let num = cards.iter().len();
+        if num > 0 {
+            if let tr = card_plane.single() {
+                let hand_positions =
+                    calculate_hand_positions(num, 0.0, 200., PI / 4., tr.translation.z, -6.7);
+                cards.iter_mut().enumerate().for_each(
+                    |(index, (entity, mut transform, mut card))| {
+                        let target = AnimationTarget.into_target();
+                        let mut start = target.transform_state(transform.clone());
+                        if let Some(tr_end) = hand_positions.get(index) {
+                            commands.entity(entity).animation().insert_tween_here(
+                                Duration::from_secs_f32(0.2),
+                                EaseKind::ExponentialOut,
+                                start.translation_to(tr_end.clone().translation),
+                            );
+                            card.trans = tr_end.clone();
+                        }
+                    },
+                )
+            }
+        }
+    }
+}
 
 /// 计算手牌位置
 pub fn calculate_hand_positions(

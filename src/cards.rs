@@ -26,18 +26,17 @@ pub struct CardInfo {}
 pub struct Setted;
 
 pub fn gen_put_card<C>(
-    commands: &mut Commands,
     materials: &mut ResMut<Assets<StandardMaterial>>,
     meshes: &mut ResMut<Assets<Mesh>>,
     width: f32,
     height: f32,
     radius: f32,
     thick: f32,
-) -> impl FnMut(Handle<Image>, Transform) -> Entity
+) -> impl FnMut(&mut Commands, Handle<Image>, Transform) -> Entity
 where
     C: Component,
 {
-    move |images: Handle<Image>, transform: Transform| {
+    move |commands: &mut Commands, images: Handle<Image>, transform: Transform| {
         let mesh_list = gen_card_mesh_list(meshes, width, height, radius, thick);
 
         commands

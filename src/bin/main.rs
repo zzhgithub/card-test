@@ -96,16 +96,8 @@ fn setup(
         case_plane,
     ));
 
-    let mut card_fn = gen_put_card::<Plane>(
-        &mut commands,
-        &mut materials,
-        &mut meshes,
-        3. / 1.4,
-        3.,
-        0.05,
-        0.01,
-    );
-    card_fn(assets.vertin.clone(), Transform::default());
+    let mut card_fn = gen_put_card::<Plane>(&mut materials, &mut meshes, 3. / 1.4, 3., 0.05, 0.01);
+    card_fn(&mut commands, assets.vertin.clone(), Transform::default());
     // card_fn(
     //     assets.vertin.clone(),
     //     Transform::from_xyz(-0.5, -0.5, 0.0001),

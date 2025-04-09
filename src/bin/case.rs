@@ -72,7 +72,6 @@ fn setup(
 
     // 卡片放置器 放置在查看面上
     let mut card_fn = gen_put_card::<CardPlane>(
-        &mut commands,
         &mut materials,
         &mut meshes,
         3. / 1.4,
@@ -82,6 +81,7 @@ fn setup(
     );
     let yellow = asset_server.load("NAAI-A-001.png");
     card_fn(
+        &mut commands,
         yellow.clone(),
         Transform::from_xyz(0., 0., card_plane.translation.z),
     );

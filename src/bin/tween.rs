@@ -11,7 +11,7 @@ use bevy_tween::prelude::*;
 use card_test::camera_controller::{CameraController, CameraControllerPlugin};
 use card_test::cards::{Card, Dragging, Setted, gen_put_card};
 use card_test::cases::{CaseImages, CasePlane, render_case};
-use card_test::hands::{HandCard, calculate_hand_positions};
+use card_test::hands::{CardPlane, HandCard, HandCardPlugin, calculate_hand_positions};
 use card_test::{CommonPlugin, MainCamera};
 use std::f32::consts::PI;
 
@@ -24,6 +24,7 @@ fn main() {
             // 动画相关
             DefaultTweenPlugins,
             CommonPlugin,
+            HandCardPlugin,
         ))
         .add_plugins(WorldInspectorPlugin::new())
         .add_systems(Startup, setup)
@@ -31,9 +32,6 @@ fn main() {
         .add_systems(Update, card_test::cards::clear_on_finish_system)
         .run();
 }
-
-#[derive(Component)]
-pub struct CardPlane;
 
 fn setup(
     mut commands: Commands,
@@ -79,21 +77,14 @@ fn setup(
     commands.spawn((CasePlane, case_plane));
 
     // 卡片放置器 放置在查看面上
-    let mut card_fn = gen_put_card::<CardPlane>(
-        &mut commands,
-        &mut materials,
-        &mut meshes,
-        3. / 1.4,
-        3.,
-        0.05,
-        0.01,
-    );
+    let mut card_fn =
+        gen_put_card::<CardPlane>(&mut materials, &mut meshes, 3. / 1.4, 3., 0.05, 0.01);
     let yellow = asset_server.load("NAAI-A-001.png");
 
     let hand_positions =
-        calculate_hand_positions(20, 0.0, 200., PI / 4., card_plane.translation.z, -6.7);
+        calculate_hand_positions(40, 0.0, 200., PI / 4., card_plane.translation.z, -6.7);
     hand_positions.iter().for_each(|hand_position| {
-        let entity = card_fn(yellow.clone(), hand_position.clone());
+        let entity = card_fn(&mut commands, yellow.clone(), hand_position.clone());
         commands.entity(entity).insert(HandCard);
     })
 }

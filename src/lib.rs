@@ -1,5 +1,6 @@
 use crate::cards::Card;
 use crate::color::{BaseColor, basic_color};
+use crate::hands::HandCardChanged;
 use crate::shark::{custom_interpolators_plugin, effect_intensity};
 use bevy::app::App;
 use bevy::color::palettes::css::{WHITE, YELLOW};
@@ -13,13 +14,14 @@ use bevy_tween::prelude::*;
 use bevy_tween::tween::AnimationTarget;
 use rand::prelude::*;
 use std::f32::consts::PI;
+use log::info;
 
 pub mod camera_controller;
 pub mod cards;
 pub mod cases;
 pub mod color;
-pub mod shark;
 pub mod hands;
+pub mod shark;
 
 pub struct CommonPlugin;
 
@@ -129,9 +131,13 @@ fn spawn_ui_popup(
                                 ));
                             })
                             .observe(
-                                move |click: Trigger<Pointer<Click>>, mut commands: Commands, mut children_query: Query<&Children,With<Card>>, | {
+                                move |click: Trigger<Pointer<Click>>, mut commands: Commands, mut children_query: Query<&Children,With<Card>>,
+                                      mut changed_event: EventWriter<HandCardChanged>| {
                                     on_confirm(&mut commands, &mut children_query);
                                     commands.entity(all).despawn_recursive();
+                                    // 发送手牌变化事件
+                                    info!("手牌发生变化");
+                                    changed_event.send(HandCardChanged);
                                 },
                             );
 

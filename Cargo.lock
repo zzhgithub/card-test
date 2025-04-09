@@ -1627,6 +1627,7 @@ dependencies = [
  "bevy",
  "bevy-inspector-egui",
  "bevy_tween",
+ "log",
  "rand 0.9.0",
 ]
 
