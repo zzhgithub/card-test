@@ -1,4 +1,5 @@
 use crate::cases::CaseZone;
+use crate::hands::HandCard;
 use crate::spawn_ui_popup;
 use bevy::ecs::observer::TriggerTargets;
 use bevy::prelude::*;
@@ -139,7 +140,7 @@ pub fn deal_on_drop(
                     mid.z = card_clone.trans.translation.z;
 
                     let mut mid2 = Vec3::ZERO;
-                    mid2.z = card_clone.trans.translation.z + 3.0;
+                    mid2.z = card_clone.trans.translation.z + 7.0;
                     info!("{:?}", card_clone.clone().trans.translation);
                     info!("{:?}", mid);
                     info!("{:?}", end);
@@ -176,7 +177,10 @@ pub fn deal_on_drop(
                             )),
                         )))
                         .insert(card_end.clone())
-                        .insert(Setted);
+                        .insert(Setted)
+                        // 剔除手牌
+                        .remove::<HandCard>();
+                    // 抛出手牌变化的事件
                     info!("确认");
                 },
                 move |cmd| {
@@ -201,7 +205,7 @@ pub fn over_card(
             let target = AnimationTarget.into_target();
             let mut start = target.transform_state(tr.clone());
             let mut end = tr.clone().translation;
-            end.y = -2.0;
+            end.y += 2.0;
             info!("over");
             info!("{:?}", tr);
             info!("{:?}", end.clone());

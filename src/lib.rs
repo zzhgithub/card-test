@@ -18,7 +18,8 @@ pub mod camera_controller;
 pub mod cards;
 pub mod cases;
 pub mod color;
-mod shark;
+pub mod shark;
+pub mod hands;
 
 pub struct CommonPlugin;
 

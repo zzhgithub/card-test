@@ -1,16 +1,17 @@
+use bevy::DefaultPlugins;
 use bevy::app::App;
 use bevy::asset::{Assets, Handle};
-use bevy::DefaultPlugins;
 
 use bevy::math::{Quat, Vec2};
 use bevy::pbr::StandardMaterial;
 use bevy::prelude::*;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
-use bevy_tween::prelude::*;
 use bevy_tween::DefaultTweenPlugins;
+use bevy_tween::prelude::*;
 use card_test::camera_controller::{CameraController, CameraControllerPlugin};
-use card_test::cards::{gen_put_card, Card, Dragging, Setted};
-use card_test::cases::{render_case, CaseImages, CasePlane};
+use card_test::cards::{Card, Dragging, Setted, gen_put_card};
+use card_test::cases::{CaseImages, CasePlane, render_case};
+use card_test::hands::{HandCard, calculate_hand_positions};
 use card_test::{CommonPlugin, MainCamera};
 use std::f32::consts::PI;
 
@@ -70,7 +71,7 @@ fn setup(
 
     // 设置两个用来触发的 平面 用来计算当前鼠标的位置
     let card_plane =
-        Transform::from_xyz(0.0, 0.0, 18.0).with_rotation(Quat::from_axis_angle(Vec3::X, PI / 2.0));
+        Transform::from_xyz(0.0, 0.0, 10.0).with_rotation(Quat::from_axis_angle(Vec3::X, PI / 2.0));
     let case_plane =
         Transform::from_xyz(0.0, 0.0, 0.0).with_rotation(Quat::from_axis_angle(Vec3::X, PI / 2.0));
 
@@ -88,10 +89,13 @@ fn setup(
         0.01,
     );
     let yellow = asset_server.load("NAAI-A-001.png");
-    card_fn(
-        yellow.clone(),
-        Transform::from_xyz(0., -4., card_plane.translation.z),
-    );
+
+    let hand_positions =
+        calculate_hand_positions(20, 0.0, 200., PI / 4., card_plane.translation.z, -6.7);
+    hand_positions.iter().for_each(|hand_position| {
+        let entity = card_fn(yellow.clone(), hand_position.clone());
+        commands.entity(entity).insert(HandCard);
+    })
 }
 
 // 测试移动效果
@@ -103,7 +107,7 @@ pub fn change_trans(
     if keyboard_input.just_pressed(KeyCode::KeyA) {
         card.iter_mut()
             .for_each(|(entity, mut transform, mut card)| {
-                let at = Transform::from_xyz(0., -4., 18.0);
+                let at = Transform::from_xyz(0., -4., 10.0);
                 info!("{:?}", at);
                 info!("{:?}", card);
                 commands
