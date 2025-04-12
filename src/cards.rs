@@ -14,6 +14,7 @@ use bevy_tween::prelude::{AnimationBuilderExt, IntoTarget};
 use bevy_tween::tween::AnimationTarget;
 use std::f32::consts::PI;
 use std::time::Duration;
+use crate::preview_plugins::preview_on_click;
 
 #[derive(Default, Component, Clone, Debug)]
 pub struct Card {
@@ -104,6 +105,7 @@ where
             .observe(out_card)
             .observe(over_card_show)
             .observe(out_card_show)
+            .observe(preview_on_click)
             .id()
     }
 }

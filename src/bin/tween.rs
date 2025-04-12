@@ -17,6 +17,7 @@ use card_test::card_info::get_card_info;
 use card_test::cards::{Card, CardInfo, Dragging, Setted, gen_put_card};
 use card_test::cases::{CaseImages, CasePlane, render_case};
 use card_test::hands::{CardPlane, HandCard, HandCardPlugin, calculate_hand_positions};
+use card_test::preview_plugins::{ImagePreview, PreviewPlugins};
 use card_test::{CommonPlugin, MainCamera};
 use std::f32::consts::PI;
 use std::num::NonZero;
@@ -32,6 +33,7 @@ fn main() {
             CommonPlugin,
             HandCardPlugin,
             BillboardPlugin,
+            PreviewPlugins,
             // Text3dPlugin,
         ))
         .add_plugins(WorldInspectorPlugin::new())
@@ -112,11 +114,14 @@ fn setup(
         .for_each(|(index, hand_position)| {
             let entity = card_fn(
                 &mut commands,
-                asset_server.load(format!("{}.png", card_list.get(index).unwrap())),
+                asset_server.load(format!("cards/{}.png", card_list.get(index).unwrap())),
                 hand_position.clone(),
                 get_card_info(card_list.get(index).unwrap()),
             );
-            commands.entity(entity).insert(HandCard);
+            commands
+                .entity(entity)
+                .insert(HandCard)
+                .insert(ImagePreview(card_list.get(index).unwrap().to_string()));
         })
 }
 
