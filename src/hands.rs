@@ -37,20 +37,22 @@ pub fn change_hand_cards(
             if let tr = card_plane.single() {
                 let hand_positions =
                     calculate_hand_positions(num, 0.0, 200., PI / 4., tr.translation.z, -6.7);
-                cards.iter_mut().enumerate().for_each(
-                    |(index, (entity, mut transform, mut card))| {
+                let mut list: Vec<_> = cards.iter_mut().collect();
+                list.sort_by(|a, b| a.1.translation.x.partial_cmp(&b.1.translation.x).unwrap());
+                list.iter_mut()
+                    .enumerate()
+                    .for_each(|(index, &mut (ref mut entity, ref mut transform, ref mut card))| {
                         let target = AnimationTarget.into_target();
                         let mut start = target.transform_state(transform.clone());
                         if let Some(tr_end) = hand_positions.get(index) {
-                            commands.entity(entity).animation().insert_tween_here(
+                            commands.entity(*entity).animation().insert_tween_here(
                                 Duration::from_secs_f32(0.2),
                                 EaseKind::ExponentialOut,
                                 start.translation_to(tr_end.clone().translation),
                             );
                             card.trans = tr_end.clone();
                         }
-                    },
-                )
+                    })
             }
         }
     }

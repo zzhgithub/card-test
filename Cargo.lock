@@ -993,6 +993,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "bevy_mod_billboard"
+version = "0.7.0"
+source = "git+https://github.com/voximity/bevy_mod_billboard.git?branch=migrate-0.15#fe90b984c5d73bf6863daf90bc95831f27e0c072"
+dependencies = [
+ "bevy",
+ "bevy_internal",
+ "bitflags 2.9.0",
+ "smallvec",
+]
+
+[[package]]
 name = "bevy_pbr"
 version = "0.15.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1626,6 +1637,7 @@ version = "0.1.0"
 dependencies = [
  "bevy",
  "bevy-inspector-egui",
+ "bevy_mod_billboard",
  "bevy_tween",
  "log",
  "rand 0.9.0",

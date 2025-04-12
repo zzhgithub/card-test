@@ -22,6 +22,7 @@ pub mod cases;
 pub mod color;
 pub mod hands;
 pub mod shark;
+pub mod card_info;
 
 pub struct CommonPlugin;
 

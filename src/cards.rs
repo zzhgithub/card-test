@@ -1,9 +1,11 @@
 use crate::cases::CaseZone;
 use crate::hands::HandCard;
 use crate::spawn_ui_popup;
+use bevy::color::palettes;
 use bevy::ecs::observer::TriggerTargets;
 use bevy::prelude::*;
 use bevy_inspector_egui::InspectorOptions;
+use bevy_mod_billboard::BillboardText;
 use bevy_tween::combinator::{
     TransformTargetStateExt, event, event_for, parallel, sequence, tween,
 };
@@ -16,10 +18,15 @@ use std::time::Duration;
 #[derive(Default, Component, Clone, Debug)]
 pub struct Card {
     pub trans: Transform,
+    pub info: CardInfo,
 }
 
-#[derive(Component, Debug)]
-pub struct CardInfo {}
+#[derive(Component, Debug, Clone, Default)]
+pub struct CardInfo {
+    pub name: String,
+    pub ack: usize,
+    pub cost: usize,
+}
 // 生成闭包的模板
 
 #[derive(Component, Debug)]
@@ -32,17 +39,21 @@ pub fn gen_put_card<C>(
     height: f32,
     radius: f32,
     thick: f32,
-) -> impl FnMut(&mut Commands, Handle<Image>, Transform) -> Entity
+) -> impl FnMut(&mut Commands, Handle<Image>, Transform, CardInfo) -> Entity
 where
     C: Component,
 {
-    move |commands: &mut Commands, images: Handle<Image>, transform: Transform| {
+    move |commands: &mut Commands,
+          images: Handle<Image>,
+          transform: Transform,
+          card_info: CardInfo| {
         let mesh_list = gen_card_mesh_list(meshes, width, height, radius, thick);
 
         commands
             .spawn((
                 Card {
                     trans: transform.clone(),
+                    info: card_info.clone(),
                 },
                 Visibility::Inherited,
                 transform,
@@ -60,9 +71,7 @@ where
                 // 加载内容
                 for (mesh_handle, trans) in mesh_list.1 {
                     parent.spawn((
-                        CardInfo {
-                            // todo 这里是卡片的信息内容
-                        },
+                        card_info.clone(),
                         Mesh3d(mesh_handle.clone()),
                         trans.clone(),
                         MeshMaterial3d(materials.add(StandardMaterial {
@@ -93,6 +102,8 @@ where
             .observe(drag_end)
             .observe(over_card)
             .observe(out_card)
+            .observe(over_card_show)
+            .observe(out_card_show)
             .id()
     }
 }
@@ -101,7 +112,6 @@ where
 pub fn deal_on_drop(
     drag_drop: Trigger<Pointer<DragDrop>>,
     mut query: Query<&mut CaseZone>,
-    mut card_info_query: Query<&mut CardInfo>,
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     mut card_q: Query<&mut Card, Without<Setted>>,
@@ -113,9 +123,6 @@ pub fn deal_on_drop(
     let case_zone = query.get_mut(drag_drop.target).unwrap();
     let end = case_zone.clone().transform.translation;
     // info!("{:?}", case_zone);
-    if let Ok(y) = card_info_query.get(drag_drop.dropped) {
-        // todo
-    }
     //todo 处理内部的场地和卡片的关系
     // info!("{:?}", y);
     if let Ok(parent) = p_q.get(drag_drop.dropped) {
@@ -125,6 +132,7 @@ pub fn deal_on_drop(
             let mut card_clone = card.clone();
             let card_end = Card {
                 trans: Transform::from_translation(end.clone()),
+                info: card_clone.info.clone(),
             };
             spawn_ui_popup(
                 &mut commands,
@@ -215,6 +223,68 @@ pub fn over_card(
             );
         }
     }
+}
+
+#[derive(Component, Debug, Clone)]
+pub struct ShowCard;
+
+pub fn over_card_show(
+    out: Trigger<Pointer<Over>>,
+    mut commands: Commands,
+    query: Query<&Parent>,
+    query_transform: Query<(&Transform, &Card), (Without<Dragging>, With<Setted>)>,
+    asset_server: Res<AssetServer>,
+) {
+    let fira_sans_regular_handle: Handle<Font> = asset_server.load("fonts/wqy-microhei.ttc");
+
+    if let Ok(parent) = query.get(out.target) {
+        if let Ok((tr, card)) = query_transform.get(parent.get()) {
+            commands.entity(parent.get()).with_children(|parent| {
+                parent
+                    .spawn((ShowCard, Transform::default(), Visibility::default()))
+                    .with_children(|parent| {
+                        parent
+                            .spawn((
+                                BillboardText::default(),
+                                TextLayout::new_with_justify(JustifyText::Left),
+                                Transform::from_xyz(0.0, 1.8, 1.0).with_scale(Vec3::splat(0.01)),
+                            ))
+                            .with_children(|info_plane| {
+                                info_plane.spawn((
+                                    TextSpan::new(card.clone().info.name),
+                                    TextFont::from_font(fira_sans_regular_handle.clone())
+                                        .with_font_size(60.0),
+                                    TextColor::from(Color::Srgba(palettes::css::WHITE)),
+                                ));
+                            });
+                        parent
+                            .spawn((
+                                BillboardText::default(),
+                                TextLayout::new_with_justify(JustifyText::Left),
+                                Transform::from_xyz(0.0, -1.4, 1.0).with_scale(Vec3::splat(0.01)),
+                            ))
+                            .with_children(|info_plane| {
+                                info_plane.spawn((
+                                    TextSpan::new(format!("ACK:{}", card.clone().info.ack)),
+                                    TextFont::from_font(fira_sans_regular_handle.clone())
+                                        .with_font_size(60.0),
+                                    TextColor::from(Color::Srgba(palettes::css::WHITE)),
+                                ));
+                            });
+                    });
+            });
+        }
+    }
+}
+
+pub fn out_card_show(
+    _out: Trigger<Pointer<Out>>,
+    mut commands: Commands,
+    mut query: Query<Entity, With<ShowCard>>,
+) {
+    query
+        .iter()
+        .for_each(|e| commands.entity(e).despawn_recursive());
 }
 
 pub fn out_card(

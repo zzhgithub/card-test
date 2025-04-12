@@ -9,14 +9,7 @@ bevy-inspector-egui = { version = "0.30.0" }
 bevy_tween = "0.7.0"
 rand = "0.9.0-beta.1"
 log = "0.4.26"
-
-[[bin]]
-name = "main"
-path = "src/bin/main.rs"
-
-[[bin]]
-name = "case"
-path = "src/bin/case.rs"
+bevy_mod_billboard = { git = "https://github.com/voximity/bevy_mod_billboard.git", branch = "migrate-0.15" }
 
 [[bin]]
 name = "tween"
